@@ -33,7 +33,7 @@ public void OnPluginStart()
  */
 public void OnMapStart() 
 {
-	GetStandardHostagesModelsEntities();
+	GetHostagesModelsEntities();
 	
 	if(HOSTAGES_EXIST)
 		PrecacheModels();
@@ -42,7 +42,10 @@ public void OnMapStart()
 public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
 	if(HOSTAGES_EXIST)
+	{
+		GetHostagesModelsEntities();
 		SetRandomHostagesModels();
+	}	
 }
 
 /*
@@ -50,7 +53,7 @@ public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
  */
 
 /// Tring to get entities standard hostages models and check are hostages exists on map.
-public void GetStandardHostagesModelsEntities()
+public void GetHostagesModelsEntities()
 {
 	int entity = -1;
 	int entity_count = 0;
