@@ -3,6 +3,7 @@
  */
 #include <sourcemod>
 #include <sdktools>
+#include <cstrike>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -34,6 +35,9 @@ public void OnPluginStart()
  */
 public void OnMapStart() 
 {
+	HOSTAGES_ENTITY_SET = false;
+	HOSTAGES_EXIST = false;
+
 	GetHostagesModelsEntities();
 	
 	if(HOSTAGES_EXIST)
@@ -49,11 +53,25 @@ public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 	}	
 }
 
+public Action CS_OnTerminateRound(float &delay, CSRoundEndReason &reason)
+{
+	if(reason == CSRoundEnd_GameStart)
+	{
+		if(HOSTAGES_EXIST)
+		{
+			GetHostagesModelsEntities();
+			SetRandomHostagesModels();
+		}	
+	}
+
+	return Plugin_Continue;
+}
+
 /*
  * Usefull Functions
  */
 
-/// Tring to get entities standard hostages models and check are hostages exists on map.
+/// Traing to get entities hostages standard models and check are hostages exists on map.
 public void GetHostagesModelsEntities()
 {
 	int entity = -1;
@@ -68,11 +86,16 @@ public void GetHostagesModelsEntities()
 	if(!HOSTAGES_ENTITY_SET)
 	{
 		if(entity_count > 0)
+		{
 			HOSTAGES_EXIST = true;
+			PrintToServer("Hosty znalezione: %d", entity_count);
+		}
 		else
+		{
 			HOSTAGES_EXIST = false;
+		}
 		
-		HOSTAGES_ENTITY_SET = true;	
+		HOSTAGES_ENTITY_SET = true;
 	}
 }
 
@@ -93,5 +116,5 @@ public void SetRandomHostagesModels()
 		int random = GetRandomInt(0, 3);
 		SetEntityModel(MODELS_ENTITIES[entity_count], MODELS_PATHS[random]);
 		SetEntityRenderColor(MODELS_ENTITIES[entity_count], 255, 255, 255, 255);
-	} 
+	}
 }
