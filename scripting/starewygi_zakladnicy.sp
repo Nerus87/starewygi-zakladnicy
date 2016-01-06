@@ -13,7 +13,6 @@ public Plugin myinfo = {
 	version = "1.1"
 }
 
-bool HOSTAGES_ENTITY_SET = false;
 bool HOSTAGES_EXIST = false;
 
 int MODELS_ENTITIES[4];
@@ -65,15 +64,13 @@ public void GetHostagesModelsEntities()
 		entity_count++;
 	}
 	
-	if(!HOSTAGES_ENTITY_SET)
+	if(entity_count > 0)
 	{
-		if(entity_count > 0)
-			HOSTAGES_EXIST = true;
-		else
-			HOSTAGES_EXIST = false;
-		
-		HOSTAGES_ENTITY_SET = true;	
+		HOSTAGES_EXIST = true;
+		PrecacheModels();
 	}
+	else
+		HOSTAGES_EXIST = false;	
 }
 
 /// Precashing models - used on map start.
