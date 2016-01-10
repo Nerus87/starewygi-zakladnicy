@@ -11,21 +11,23 @@
 public Plugin myinfo = {
 	name = "Stare-Wygi.pl - Zakladnicy",
 	author = "Xseba360, fixed by Nerus",
-	version = "1.1"
+	version = "1.2"
 }
 
-bool HOSTAGES_ENTITY_SET = false;
-bool HOSTAGES_EXIST = false;
-
-int MODELS_ENTITIES[4];
+bool IS_MAP_WITH_HOSTAGES = false;
 
 /// Will be changed to read from file
-static char MODELS_PATHS[4][256] = {"models/csgo_hosty/hostage_01.mdl", "models/csgo_hosty/hostage_02.mdl", "models/csgo_hosty/hostage_03.mdl", "models/csgo_hosty/hostage_04.mdl"};
+static char MODELS[4][256] = {"models/csgo_hosty/hostage_01.mdl", "models/csgo_hosty/hostage_02.mdl", "models/csgo_hosty/hostage_03.mdl", "models/csgo_hosty/hostage_04.mdl"};
 
 /*
  * Plugin Events
  */
 public void OnPluginStart() 
+{
+	SetHooks();
+}
+
+public void SetHooks()
 {
 	HookEvent("round_start", OnRoundStart);
 }
@@ -35,34 +37,22 @@ public void OnPluginStart()
  */
 public void OnMapStart() 
 {
-	HOSTAGES_ENTITY_SET = false;
-	HOSTAGES_EXIST = false;
-
-	GetHostagesModelsEntities();
+	IS_MAP_WITH_HOSTAGES = IsHostageMap();
 	
-	if(HOSTAGES_EXIST)
+	if(IS_MAP_WITH_HOSTAGES)
 		PrecacheModels();
 }
 
 public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
-	if(HOSTAGES_EXIST)
-	{
-		GetHostagesModelsEntities();
+	if(IS_MAP_WITH_HOSTAGES)
 		SetRandomHostagesModels();
-	}	
 }
 
 public Action CS_OnTerminateRound(float &delay, CSRoundEndReason &reason)
 {
-	if(reason == CSRoundEnd_GameStart)
-	{
-		if(HOSTAGES_EXIST)
-		{
-			GetHostagesModelsEntities();
-			SetRandomHostagesModels();
-		}	
-	}
+	if(reason == CSRoundEnd_GameStart && IS_MAP_WITH_HOSTAGES)
+		SetRandomHostagesModels();
 
 	return Plugin_Continue;
 }
@@ -71,50 +61,53 @@ public Action CS_OnTerminateRound(float &delay, CSRoundEndReason &reason)
  * Usefull Functions
  */
 
-/// Traing to get entities hostages standard models and check are hostages exists on map.
-public void GetHostagesModelsEntities()
-{
-	int entity = -1;
-	int entity_count = 0;
-	
-	while ( (entity = FindEntityByClassname(entity, "hostage_entity")) > -1)
-	{
-		MODELS_ENTITIES[entity_count] = entity;
-		entity_count++;
-	}
-	
-	if(!HOSTAGES_ENTITY_SET)
-	{
-		if(entity_count > 0)
-		{
-			HOSTAGES_EXIST = true;
-			PrintToServer("Hosty znalezione: %d", entity_count);
-		}
-		else
-		{
-			HOSTAGES_EXIST = false;
-		}
-		
-		HOSTAGES_ENTITY_SET = true;
-	}
-}
-
 /// Precashing models - used on map start.
 public void PrecacheModels()
 {
-	PrecacheModel(MODELS_PATHS[0], true);
-	PrecacheModel(MODELS_PATHS[1], true);
-	PrecacheModel(MODELS_PATHS[2], true);
-	PrecacheModel(MODELS_PATHS[3], true);
+	if(!(PrecacheModel(MODELS[0], true) > 0))
+		LogErrorStateOnPrecache(0);
+	
+	if(!(PrecacheModel(MODELS[1], true) > 0))
+		LogErrorStateOnPrecache(1);
+		
+	if(!(PrecacheModel(MODELS[2], true) > 0))
+		LogErrorStateOnPrecache(2);
+	
+	if(!(PrecacheModel(MODELS[3], true) > 0))
+		LogErrorStateOnPrecache(3);
 }
 
 /// Set hostages as random models
 public void SetRandomHostagesModels() 
 {
-	for(int entity_count = 0; entity_count < sizeof(MODELS_ENTITIES); entity_count++)
+	int entity = -1;
+
+	while ( (entity = FindEntityByClassname(entity, "hostage_entity")) > -1)
 	{
 		int random = GetRandomInt(0, 3);
-		SetEntityModel(MODELS_ENTITIES[entity_count], MODELS_PATHS[random]);
-		SetEntityRenderColor(MODELS_ENTITIES[entity_count], 255, 255, 255, 255);
+		SetEntityModel(entity, MODELS[random]);
+		SetEntityRenderColor(entity, 255, 255, 255, 255);
 	}
+}
+
+public bool IsHostageMap()
+{
+	char map[32];
+	
+	if(GetCurrentMap(map, 32) > 0 && StrContains(map, "cs_", false) > -1)
+	{
+		PrintToServer(map);
+		return true;
+	}		
+	
+	return false;
+}
+
+public void LogErrorStateOnPrecache(int model_index)
+{
+	char error[512];
+	Format(error, 512, "[S-W:Z] ERROR on precache a given model: %s", MODELS[model_index]);
+
+	LogError(error);
+	SetFailState(error);
 }
